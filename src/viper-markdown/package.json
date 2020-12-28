@@ -1,0 +1,9 @@
+{
+    "private": true,
+    "main": "dist/index.js",
+    "dependencies": {
+        "@cofl/viper": "file:../viper",
+        "mime-types": "^2.1.27",
+        "micromark": "~2.11.2"
+    }
+}

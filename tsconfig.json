@@ -1,0 +1,32 @@
+{
+    "extends": "./configs/base",
+    "compilerOptions": {
+        "outDir": "dist"
+    },
+    "references": [
+        {
+            "path": "./src/viper"
+        },
+        {
+            "path": "./src/viper-file"
+        },
+        {
+            "path": "./src/viper-markdown"
+        },
+        {
+            "path": "./src/viper-misc"
+        },
+        {
+            "path": "./src/viper-print-tree"
+        },
+        {
+            "path": "./src/viper-pug"
+        },
+        {
+            "path": "./test"
+        }
+    ],
+    "exclude": [
+        "./**/*"
+    ]
+}

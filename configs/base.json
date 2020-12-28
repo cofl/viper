@@ -1,0 +1,44 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "alwaysStrict": true,
+        "baseUrl": "../src",
+        "declaration": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "CommonJS",
+        "importsNotUsedAsValues": "error",
+        "newLine": "lf",
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "sourceMap": true,
+        "strict": true,
+        "target": "ES2020",
+        "moduleResolution": "node",
+        "paths": {
+            "@cofl/viper": [
+                "viper"
+            ],
+            "@cofl/viper-file": [
+                "viper-file"
+            ],
+            "@cofl/viper-markdown": [
+                "viper-markdown"
+            ],
+            "@cofl/viper-misc": [
+                "viper-misc"
+            ],
+            "@cofl/viper-print-tree": [
+                "viper-print-tree"
+            ],
+            "@cofl/viper-pug": [
+                "viper-pug"
+            ]
+        }
+    }
+}

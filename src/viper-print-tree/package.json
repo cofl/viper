@@ -1,0 +1,8 @@
+{
+    "private": true,
+    "main": "dist/index.js",
+    "dependencies": {
+        "print-tree": "^0.1.5",
+        "@cofl/viper": "file:../viper"
+    }
+}
