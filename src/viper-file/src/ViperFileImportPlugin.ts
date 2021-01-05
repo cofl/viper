@@ -65,7 +65,7 @@ export class ViperVirtualFile implements ViperVirtualItem {
 
 async function isDataFile(path: string): Promise<boolean> {
     const filename = basename(path.replace(/\\/g, '/'));
-    return filename.startsWith('_') && 'json' !== extname(filename).toLowerCase();
+    return /^_.*\.json$/i.test(filename);
 }
 
 export interface FileData {
@@ -114,7 +114,7 @@ export class ViperFileImportPlugin implements ViperGeneratorPlugin {
     constructor(...args: ViperFileImportPluginConstructorType) {
         this.rootPath = resolve(process.cwd(), args[0]);
         this.ignoreOptions = args.length === 2 && !Array.isArray(args[1]) ? args[1] : {
-            ignoreFiles: ['.gitignore']
+            ignoreFiles: ['.gitignore', '.ignore']
         };
         const handlers: FileHandler[] = args.length === 3 ? args[2]! : (Array.isArray(args[1]) ? args[1] : []);
         if (handlers?.length > 0)

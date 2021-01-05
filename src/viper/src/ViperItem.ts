@@ -18,6 +18,7 @@ interface BaseViperItem {
 
 export interface ViperPage extends BaseViperItem {
     readonly type: ViperItemType.Page;
+    readonly filePath?: string;
     metadata: Record<string, any>;
     contentType: string;
     content: Buffer;

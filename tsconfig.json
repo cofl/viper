@@ -23,6 +23,9 @@
             "path": "./src/viper-pug"
         },
         {
+            "path": "./src/viper-sass"
+        },
+        {
             "path": "./test"
         }
     ],

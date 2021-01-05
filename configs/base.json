@@ -38,6 +38,9 @@
             ],
             "@cofl/viper-pug": [
                 "viper-pug"
+            ],
+            "@cofl/viper-sass": [
+                "viper-sass"
             ]
         }
     }
