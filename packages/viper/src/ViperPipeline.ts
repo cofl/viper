@@ -78,7 +78,14 @@ export class ViperPipeline {
                     break;
                 case ViperPluginType.Page:
                     for (const item of sorted.pages!)
-                        await plugin.process(item, context);
+                        await plugin.process({
+                            route: item.route,
+                            content: item.content,
+                            contentType: item.contentType,
+                            ownMetadata: item.metadata,
+                            filePath: item.filePath,
+                            __pageObject: item
+                        }, context);
                     break;
                 case ViperPluginType.Virtual:
                     for (const item of sorted.virtuals!)
@@ -102,6 +109,7 @@ export class ViperPipeline {
                     return assertNever(plugin, `Illegal State: Unreachable case.`);
             }
             if (!plugin.isPure) {
+                context.reset();
                 sorted = this.getSorted(maps);
             }
         }

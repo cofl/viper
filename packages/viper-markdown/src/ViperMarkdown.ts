@@ -1,4 +1,4 @@
-import { isBufferEncoding, ViperContext, ViperPage, ViperPagePlugin, ViperPluginType } from "@cofl/viper";
+import { isBufferEncoding, ViperContext, ViperPageData, ViperPagePlugin, ViperPluginType } from "@cofl/viper";
 import micromark from "micromark";
 import { lookup } from "mime-types";
 import { ViperMarkdownPage } from "./ViperMarkdownPage";
@@ -19,15 +19,15 @@ export class ViperMarkdown implements ViperPagePlugin {
         this.options = args[isFirstArgumentEncoding ? 1 : 0] as MicromarkOptions | undefined ?? {};
     }
 
-    process(page: ViperPage, context: ViperContext): void {
+    process(page: ViperPageData, context: ViperContext): void {
         if (page.contentType !== MARKDOWN_MIME)
             return;
-        const encoding = isBufferEncoding(page.metadata?.viper?.encoding) ? page.metadata.viper.encoding : this.encoding;
+        const encoding = context.getEncoding(page, this.encoding);
         const content = micromark(page.content, encoding ?? this.encoding, this.options);
         const mdPage = new ViperMarkdownPage(
             page.route.replace(MARKDOWN_EXTENSION, '.html'),
             Buffer.from(content, encoding ?? this.encoding),
-            page.metadata, page);
-        context.rootInstance.replacePage(page, mdPage);
+            page.ownMetadata, page.__pageObject);
+        context.rootInstance.replacePage(page.__pageObject, mdPage);
     }
 }

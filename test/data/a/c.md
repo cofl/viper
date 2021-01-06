@@ -1,0 +1,4 @@
+---
+viper:
+    clean-url: false
+---

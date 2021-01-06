@@ -1,5 +1,5 @@
 import type { Viper } from './Viper';
-import type { ViperContext } from './ViperContext';
+import type { ViperContext, ViperPageData } from './ViperContext';
 import type { ViperNonDirectory, ViperPage, ViperVirtualItem, ViperDirectory } from "./ViperItem";
 import type { ViperPipeline } from './ViperPipeline';
 
@@ -51,7 +51,7 @@ export function isViperGeneratorPlugin(candidate: any): candidate is ViperGenera
 export type ViperPagePlugin = {
     readonly type: ViperPluginType.Page;
     readonly isPure?: boolean;
-    process(page: ViperPage, context?: ViperContext): void | Promise<void>;
+    process(page: ViperPageData, context?: ViperContext): void | Promise<void>;
 }
 
 export function isViperPagePlugin(candidate: any): candidate is ViperPagePlugin {

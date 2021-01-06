@@ -1,5 +1,4 @@
-import { ViperPage, ViperPagePlugin, ViperPluginType, ViperContext, isBufferEncoding, ViperItemType, routeName } from "@cofl/viper";
-import { detect } from "chardet";
+import { ViperPage, ViperPageData, ViperPagePlugin, ViperPluginType, ViperContext, ViperItemType, routeName } from "@cofl/viper";
 import { dirname } from "path";
 import { renderSync, Options as SassOptions } from "sass";
 
@@ -32,17 +31,16 @@ export class ViperSassPlugin implements ViperPagePlugin {
         this.sassOptions = options;
     }
 
-    process(page: ViperPage, context: ViperContext): void {
+    process(page: ViperPageData, context: ViperContext): void {
         if (!SASS_EXTENSION.test(page.route))
             return;
         if (this.removeIncludesFromOutput && routeName(page.route)[0] === '_') {
-            context.rootInstance.removePage(page);
+            context.rootInstance.removePage(page.__pageObject);
             return;
         }
 
         const newRoute = page.route.replace(SASS_EXTENSION, CSS_EXTENSION);
-        const detected = detect(page.content);
-        const encoding: BufferEncoding = isBufferEncoding(detected) ? detected : 'utf-8';
+        const encoding = context.getEncoding(page, 'utf-8');
         const options = { ...this.sassOptions, outFile: newRoute, data: page.content.toString(encoding) };
         const pageMetadata = context.getMetadata(page);
         if (page.filePath || pageMetadata["sassIncludePath"]) {
@@ -55,7 +53,7 @@ export class ViperSassPlugin implements ViperPagePlugin {
         const result = renderSync(options);
         page.content = result.css;
 
-        context.rootInstance.movePage(page, newRoute);
+        context.rootInstance.movePage(page.__pageObject, newRoute);
         if (result.map)
             context.rootInstance.addPage(new ViperSassSourceMap(`${newRoute}.map`, result.map))
     }

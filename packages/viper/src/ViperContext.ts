@@ -1,6 +1,21 @@
 import deepmerge from "deepmerge";
+import { isBufferEncoding } from "./Util";
+import { detect } from "chardet";
 import type { Viper, ViperOptions } from "./Viper";
-import type { ViperItem } from "./ViperItem";
+import type { ViperItem, ViperPage } from "./ViperItem";
+
+export interface ViperPageData {
+    route: string,
+    content: Buffer,
+    contentType: string,
+    ownMetadata: Record<string, any>,
+    filePath: string | undefined,
+    __pageObject: ViperPage
+};
+
+function isViperPageData(candidate: any): candidate is ViperPageData {
+    return typeof candidate?.ownMetadata === 'object';
+}
 
 export class ViperContext {
     readonly rootInstance: Viper;
@@ -11,10 +26,24 @@ export class ViperContext {
         this.options = options;
     }
 
-    getMetadata(item: ViperItem): Record<string, any> {
-        // TODO: memoize
+    reset(): void {
+        this.metadataCache = {};
+    }
+
+    private metadataCache: Record<string, Record<string, any>> = {}
+    getMetadata(item: ViperItem | ViperPageData): Record<string, any> {
+        if (item.route in this.metadataCache)
+            return this.metadataCache[item.route]!;
+
+        if (isViperPageData(item)) {
+            const page = this.rootInstance.getPage(item.route);
+            if (null === page)
+                throw `Could not find page from page data: ${item.route}`;
+            item = page;
+        }
+
         if (this.options.mergeType === 'none')
-            return item.metadata || {};
+            return this.metadataCache[item.route] = item.metadata || {};
         const stack: ViperItem[] = [item];
         while (true) {
             const last = stack[stack.length - 1]!;
@@ -30,6 +59,11 @@ export class ViperContext {
             else if (item.metadata)
                 data = deepmerge(data, item.metadata);
         }
-        return data;
+        return this.metadataCache[item.route] = data;
+    }
+
+    getEncoding<T extends BufferEncoding | undefined>(page: ViperPageData, defaultEncoding: T): BufferEncoding | T {
+        const detected = detect(page.content);
+        return isBufferEncoding(detected) ? detected : defaultEncoding;
     }
 }
