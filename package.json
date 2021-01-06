@@ -1,13 +1,13 @@
 {
     "private": true,
     "dependencies": {
-        "@cofl/viper": "file:src/viper",
-        "@cofl/viper-file": "file:src/viper-file",
-        "@cofl/viper-markdown": "file:src/viper-markdown",
-        "@cofl/viper-misc": "file:src/viper-misc",
-        "@cofl/viper-print-tree": "file:src/viper-print-tree",
-        "@cofl/viper-pug": "file:src/viper-pug",
-        "@cofl/viper-sass": "file:src/viper-sass"
+        "@cofl/viper": "file:packages/viper",
+        "@cofl/viper-file": "file:packages/viper-file",
+        "@cofl/viper-markdown": "file:packages/viper-markdown",
+        "@cofl/viper-misc": "file:packages/viper-misc",
+        "@cofl/viper-print-tree": "file:packages/viper-print-tree",
+        "@cofl/viper-pug": "file:packages/viper-pug",
+        "@cofl/viper-sass": "file:packages/viper-sass"
     },
     "devDependencies": {
         "@types/mime-db": "^1.27.0",

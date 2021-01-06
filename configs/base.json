@@ -2,7 +2,7 @@
     "$schema": "https://json.schemastore.org/tsconfig",
     "compilerOptions": {
         "alwaysStrict": true,
-        "baseUrl": "../src",
+        "baseUrl": "../packages",
         "declaration": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
@@ -41,6 +41,9 @@
             ],
             "@cofl/viper-sass": [
                 "viper-sass"
+            ],
+            "@cofl/viper2": [
+                "viper2"
             ]
         }
     }

@@ -1,4 +1,4 @@
-import { ViperPage, ViperPagePlugin, ViperPluginType, ViperContext, isBufferEncoding, getViperAncestorInstance, ViperItemType, routeName } from "@cofl/viper";
+import { ViperPage, ViperPagePlugin, ViperPluginType, ViperContext, isBufferEncoding, ViperItemType, routeName } from "@cofl/viper";
 import { detect } from "chardet";
 import { dirname } from "path";
 import { renderSync, Options as SassOptions } from "sass";
@@ -55,9 +55,8 @@ export class ViperSassPlugin implements ViperPagePlugin {
         const result = renderSync(options);
         page.content = result.css;
 
-        const ancestor = getViperAncestorInstance(page);
-        ancestor.movePage(page, newRoute);
+        context.rootInstance.movePage(page, newRoute);
         if (result.map)
-            ancestor.addPage(new ViperSassSourceMap(`${newRoute}.map`, result.map))
+            context.rootInstance.addPage(new ViperSassSourceMap(`${newRoute}.map`, result.map))
     }
 }

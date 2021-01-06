@@ -6,14 +6,9 @@
         "composite": true,
         "rootDir": "src",
         "sourceMap": true,
-        "noUnusedLocals": false,
-        "paths": {
-            "@cofl/viper-file": [ "../src/viper-file" ]
-        }
+        "noUnusedLocals": false
     },
-    "include": [ "./**/*" ],
-    "references": [
-        { "path": "../src/viper" },
-        { "path": "../src/viper-file" }
+    "include": [
+        "./**/*"
     ]
 }

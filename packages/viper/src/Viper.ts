@@ -1,4 +1,4 @@
-import path, { isAbsolute, basename, dirname } from 'path';
+import { isAbsolute, basename, dirname, posix } from 'path';
 import { NonEmptyArray, last, isNonEmptyArray } from './NonEmptyArray';
 import { assertNever } from './Util';
 import { ViperContext } from './ViperContext';
@@ -6,7 +6,7 @@ import { ViperDirectory, ViperPage, ViperVirtualItem, ViperItemType, ViperItem, 
 import { hasViperVirtualInnerItem, isViperDirectory } from './ViperItem';
 import { ViperPipeline } from './ViperPipeline';
 import { ViperPlugin, isViperOutputPlugin } from './ViperPlugin';
-import resolvePath = path.posix.resolve;
+import resolvePath = posix.resolve;
 
 function normalRoute(route: string, instance: Viper) {
     if (!isAbsolute(route))
@@ -102,7 +102,8 @@ export class Viper implements ViperDirectory {
                 // to do anything special.
                 switch (item.type) {
                     case ViperItemType.Virtual:
-                        directory = item.inner = new Viper(`${directory.route}/${part}`, this.rootInstance);
+                        directory = item.inner = new ViperDirectory(normalRoute(`${directory.route}/${part}`, this));
+                        this.directoryRouteMap[directory.route] = directory;
                         break;
                     case ViperItemType.Directory:
                         directory = item;
@@ -113,9 +114,10 @@ export class Viper implements ViperDirectory {
                         return assertNever(item, `Illegal item type.`);
                 }
             } else {
-                const newDirectory = new Viper(`${directory.route}/${part}`, this.rootInstance);
+                const newDirectory = new ViperDirectory(normalRoute(`${directory.route}/${part}`, this));
                 directory.children[part] = newDirectory;
                 directory = newDirectory;
+                this.directoryRouteMap[directory.route] = directory;
             }
         }
         return directory;

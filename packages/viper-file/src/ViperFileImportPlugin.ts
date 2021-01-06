@@ -1,6 +1,6 @@
-import { isBufferEncoding, ViperGeneratorPlugin, ViperItemType, ViperNonDirectory, ViperPage, ViperPluginType, ViperVirtualItem } from "@cofl/viper";
+import { isBufferEncoding, ViperGeneratorPlugin, ViperItemType, ViperNonDirectory, routeName, routeParent, ViperPage, ViperPluginType, ViperVirtualItem } from "@cofl/viper";
 import fs, { readFileSync } from "fs";
-import { basename, dirname, extname, relative, resolve } from "path";
+import { basename, extname, relative, resolve } from "path";
 import { promisify } from "util";
 import ignoreWalk, { Options as IgnoreOptions } from "./IgnoreWalk";
 import { lookup } from "mime-types";
@@ -48,21 +48,6 @@ export class ViperFile implements ViperPage {
     }
 }
 
-export class ViperVirtualFile implements ViperVirtualItem {
-    readonly type = ViperItemType.Virtual;
-    readonly metadata: Record<string, any>;
-    route: string;
-
-    readonly filePath: string;
-
-    constructor(path: string, route: string, metadata: Record<string, any> = {}) {
-        const filename = basename(route);
-        this.filePath = path;
-        this.route = `${dirname(route)}/${filename.replace(/^_|\.json$/ig, '')}`;
-        this.metadata = metadata;
-    }
-}
-
 async function isDataFile(path: string): Promise<boolean> {
     const filename = basename(path.replace(/\\/g, '/'));
     return /^_.*\.json$/i.test(filename);
@@ -86,7 +71,7 @@ function isFileFnHandler(candidate: FileHandler): candidate is FileFnHandler {
     return typeof candidate.select === 'function';
 }
 
-function getItem(path: string, route: string, data: FileData): ViperFile | ViperVirtualFile {
+function getItem(path: string, route: string, data: FileData): ViperFile | ViperVirtualItem {
     if (!data.content)
         data.content = readFileSync(path);
     if (!data.contentType)
@@ -94,7 +79,9 @@ function getItem(path: string, route: string, data: FileData): ViperFile | Viper
     if (!data.route)
         data.route = route;
     if (data.isVirtual)
-        return new ViperVirtualFile(path, data.route, data.metadata);
+        return new ViperVirtualItem(
+            `${routeParent(data.route)}/${routeName(data.route).replace(/^_|\.json$/ig, '')}`,
+            data.metadata, path);
     else
         return new ViperFile(path, data.route, data.content, void 0, data.contentType, data.metadata);
 }
@@ -171,7 +158,9 @@ export class ViperFileImportPlugin implements ViperGeneratorPlugin {
             const detected = detect(content);
             const encoding = isBufferEncoding(detected) ? detected : 'utf-8';
             if (await isDataFile(path))
-                yield new ViperVirtualFile(path, route, JSON.parse(content.toString(encoding)));
+                yield new ViperVirtualItem(
+                    `${routeParent(route)}/${routeName(route).replace(/^_|\.json$/ig, '')}`,
+                    JSON.parse(content.toString(encoding)), path);
             else
                 yield new ViperFile(path, route, content, encoding);
         }

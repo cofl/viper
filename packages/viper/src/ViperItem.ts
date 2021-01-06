@@ -1,4 +1,3 @@
-import { Viper } from "./Viper";
 export enum ViperItemType {
     Page,
     Directory,
@@ -24,15 +23,32 @@ export interface ViperPage extends BaseViperItem {
     content: Buffer;
 }
 
-export interface ViperVirtualItem extends BaseViperItem {
-    readonly type: ViperItemType.Virtual;
-    metadata: Record<string, any>;
+export class ViperVirtualItem implements BaseViperItem {
+    readonly type = ViperItemType.Virtual;
+    readonly metadata: Record<string, any>;
+    readonly filePath?: string;
+    route: string;
+    parent?: ViperDirectory | ViperVirtualItem | undefined;
     inner?: ViperItem;
+
+    constructor(route: string, metadata: Record<string, any> = {}, path?: string) {
+        this.route = route;
+        this.metadata = metadata;
+        if (typeof path === 'string')
+            this.filePath = path;
+    }
 }
 
-export interface ViperDirectory extends BaseViperItem {
-    readonly type: ViperItemType.Directory;
-    children: Record<string, ViperItem>;
+export class ViperDirectory implements BaseViperItem {
+    readonly type = ViperItemType.Directory;
+    readonly children: Record<string, ViperItem> = {};
+    route: string;
+    parent?: ViperDirectory | ViperVirtualItem | undefined;
+    metadata?: Record<string, any> | undefined;
+
+    constructor(route: string) {
+        this.route = route;
+    }
 }
 
 export const isViperPage = (candidate: any): candidate is ViperPage => candidate?.type === ViperItemType.Page;
@@ -40,10 +56,3 @@ export const isViperDirectory = (candidate: any): candidate is ViperDirectory =>
 export const isViperVirtualItem = (candidate: any): candidate is ViperVirtualItem => candidate?.type === ViperItemType.Virtual;
 export const hasViperVirtualInnerItem = (candidate: any): candidate is ViperVirtualItem & { inner: ViperVirtualItem } =>
     isViperVirtualItem(candidate) && isViperVirtualItem(candidate.inner) && candidate.inner !== candidate;
-
-export function getViperAncestorInstance(page: ViperItem) {
-    let item: ViperNonPage = page.parent!;
-    while (!(item instanceof Viper))
-        item = item.parent!;
-    return item;
-}

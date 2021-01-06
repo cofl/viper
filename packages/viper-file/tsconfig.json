@@ -1,0 +1,11 @@
+{
+    "extends": "../../configs/package.json",
+    "compilerOptions": {
+        "baseUrl": "..",
+        "rootDir": "src",
+        "outDir": "dist",
+    },
+    "include": [
+        "./**/*"
+    ]
+}

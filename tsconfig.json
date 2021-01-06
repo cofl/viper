@@ -5,25 +5,28 @@
     },
     "references": [
         {
-            "path": "./src/viper"
+            "path": "./packages/viper"
         },
         {
-            "path": "./src/viper-file"
+            "path": "./packages/viper-file"
         },
         {
-            "path": "./src/viper-markdown"
+            "path": "./packages/viper-markdown"
         },
         {
-            "path": "./src/viper-misc"
+            "path": "./packages/viper-misc"
         },
         {
-            "path": "./src/viper-print-tree"
+            "path": "./packages/viper-print-tree"
         },
         {
-            "path": "./src/viper-pug"
+            "path": "./packages/viper-pug"
         },
         {
-            "path": "./src/viper-sass"
+            "path": "./packages/viper-sass"
+        },
+        {
+            "path": "./packages/viper2"
         },
         {
             "path": "./test"
