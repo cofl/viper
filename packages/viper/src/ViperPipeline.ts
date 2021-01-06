@@ -3,7 +3,7 @@ import { assertNever } from './Util';
 import { Viper } from './Viper';
 import type { ViperContext } from './ViperContext';
 import type { ViperPage, ViperVirtualItem, ViperDirectory } from "./ViperItem";
-import { ViperPluginType, ViperPlugin, isViperOutputPlugin } from './ViperPlugin';
+import { ViperPluginType, ViperPlugin } from './ViperPlugin';
 
 type Maps = {
     pageRouteMap: Record<string, ViperPage>,
@@ -41,8 +41,6 @@ export class ViperPipeline {
     }
 
     use(plugin: ViperPlugin): ViperPipeline {
-        if (isViperOutputPlugin(plugin) && !this.instance.isRootInstance)
-            throw `Cannot add an output plugin to a non-root instance.`;
         this.plugins.push(plugin);
         if (this.pluginTypes.indexOf(plugin.type) < 0)
             this.pluginTypes.push(plugin.type);

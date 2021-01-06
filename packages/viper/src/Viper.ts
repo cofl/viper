@@ -2,13 +2,13 @@ import { isAbsolute, basename, dirname, posix } from 'path';
 import { NonEmptyArray, last, isNonEmptyArray } from './NonEmptyArray';
 import { assertNever } from './Util';
 import { ViperContext } from './ViperContext';
-import { ViperDirectory, ViperPage, ViperVirtualItem, ViperItemType, ViperItem, ViperNonPage, ViperNonDirectory, isViperVirtualItem } from "./ViperItem";
-import { hasViperVirtualInnerItem, isViperDirectory } from './ViperItem';
+import { ViperDirectory, ViperPage, ViperVirtualItem, ViperItemType, ViperNonPage, ViperNonDirectory, isViperVirtualItem } from "./ViperItem";
+import { hasViperVirtualInnerItem } from './ViperItem';
 import { ViperPipeline } from './ViperPipeline';
-import { ViperPlugin, isViperOutputPlugin } from './ViperPlugin';
+import type { ViperPlugin } from './ViperPlugin';
 import resolvePath = posix.resolve;
 
-function normalRoute(route: string, instance: Viper) {
+function normalRoute(route: string, instance: Viper | ViperDirectory) {
     if (!isAbsolute(route))
         route = `${instance.route}${instance.route.endsWith('/') ? '' : '/'}${route}`;
     if (route === '/')
@@ -38,21 +38,14 @@ export type ViperOptions = {
 type ViperConstructorType =
     | [route?: string]
     | [options: ViperOptions]
-    | [route: string, options: ViperOptions]
-    | [route: string, rootInstance?: Viper];
-export class Viper implements ViperDirectory {
-    private rootInstance: Viper = this;
-    get isRootInstance(): boolean { return this === this.rootInstance; }
+    | [route: string, options: ViperOptions];
+export class Viper {
     private pageRouteMap: Record<string, ViperPage> = {};
     private directoryRouteMap: Record<string, ViperDirectory> = {};
     private virtualRouteMap: Record<string, NonEmptyArray<ViperVirtualItem>> = {};
-
-    private routeParts: string[];
+    private root: ViperDirectory;
 
     route: string = '/'; // need something for normalRoute to use.
-    type: ViperItemType.Directory = ViperItemType.Directory;
-    parent: ViperDirectory = this;
-    children: Record<string, ViperItem> = {};
     pipeline?: ViperPipeline;
     private options: ViperOptions = {
         mergeType: 'deep'
@@ -63,33 +56,20 @@ export class Viper implements ViperDirectory {
         const options: ViperOptions | null = typeof args[0] === 'object' ? args[0] : (args[1] instanceof Viper ? null : args[1] ?? null);
         if (options)
             this.options = { ...this.options, ...options };
-        const rootInstance: Viper | null = args[1] instanceof Viper ? args[1] : null;
-        if (rootInstance) {
-            this.rootInstance = rootInstance;
-            this.pageRouteMap = rootInstance.pageRouteMap;
-            this.virtualRouteMap = rootInstance.virtualRouteMap;
-            this.directoryRouteMap = rootInstance.directoryRouteMap;
-        }
         this.route = normalRoute(route, this);
-        this.directoryRouteMap[this.route] = this;
-
-        // note: routeParts will be empty for root.
-        this.routeParts = routeParts(this.route);
+        this.root = new ViperDirectory(this.route);
+        this.directoryRouteMap[this.route] = this.root;
     }
 
     private getParent(ownRoute: string): ViperNonPage {
         if (ownRoute in this.virtualRouteMap)
             return last(this.virtualRouteMap[ownRoute]!);
         const parentRoute = routeParent(ownRoute);
-        if (parentRoute in this.virtualRouteMap)
-            return last(this.virtualRouteMap[parentRoute]!);
         if (parentRoute in this.directoryRouteMap)
             return this.directoryRouteMap[parentRoute]!;
 
         const parts = routeParts(parentRoute);
-        let directory: ViperDirectory = parentRoute.startsWith(this.route) ? this : this.rootInstance;
-        if (directory === this && this.routeParts.length > 0)
-            parts.splice(0, this.routeParts.length);
+        let directory: ViperDirectory = this.root;
         for (const part of parts) {
             // if we get here, we've already checked that it isn't a page, and neither a
             // directory or virtual item exist, so we just need to traverse and insert.
@@ -386,8 +366,6 @@ export class Viper implements ViperDirectory {
 
     use(...plugins: ViperPlugin[]): Viper {
         for (const plugin of plugins) {
-            if (isViperOutputPlugin(plugin) && !this.isRootInstance)
-                throw `Cannot add an output plugin to a non-root instance.`;
             if (!this.pipeline)
                 this.pipeline = new ViperPipeline(this);
             this.pipeline.use(plugin);
@@ -395,50 +373,16 @@ export class Viper implements ViperDirectory {
         return this;
     }
 
-    private async run(context: ViperContext): Promise<void> {
-        if (this.pipeline)
-            await this.pipeline.run(context, {
-                pageRouteMap: this.pageRouteMap,
-                virtualRouteMap: this.virtualRouteMap,
-                directoryRouteMap: this.directoryRouteMap
-            });
-    }
-
     async build(): Promise<Viper> {
-        if (this !== this.rootInstance)
-            throw `Only the root instance may be built.`;
+        if (!this.pipeline)
+            return this;
 
-        const queue: ViperDirectory[] = [this];
-        const stack: Viper[] = [];
-        // breadth-first top-down traverse to build bottom-up run stack.
-        while (queue.length > 0) {
-            const current = queue.shift()!;
-            if (current instanceof Viper && current.pipeline)
-                stack.push(current);
-            for (const item of Object.values(current.children).sort((a, b) => a.route.localeCompare(b.route))) {
-                switch (item.type) {
-                    case ViperItemType.Page:
-                        break;
-                    case ViperItemType.Directory:
-                        queue.push(item);
-                        break;
-                    case ViperItemType.Virtual:
-                        let virtual = item;
-                        while (hasViperVirtualInnerItem(virtual))
-                            virtual = virtual.inner;
-                        if (isViperDirectory(virtual.inner))
-                            queue.push(virtual.inner);
-                        break;
-                    default:
-                        return assertNever(item, `Illegal item type`);
-                }
-            }
-        }
-
-        // proces the pipelines from the bottom to the top
         const context = new ViperContext(this, this.options);
-        while (stack.length > 0)
-            await stack.pop()!.run(context);
+        await this.pipeline.run(context, {
+            pageRouteMap: this.pageRouteMap,
+            virtualRouteMap: this.virtualRouteMap,
+            directoryRouteMap: this.directoryRouteMap
+        });
         return this;
     }
 }

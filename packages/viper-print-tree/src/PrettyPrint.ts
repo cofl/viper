@@ -1,4 +1,4 @@
-import { routeName, Viper, ViperItem, ViperItemType } from "@cofl/viper";
+import { routeName, Viper, ViperDirectory, ViperItem, ViperItemType } from "@cofl/viper";
 import { inspect } from "util";
 import printTree from "print-tree";
 
@@ -26,5 +26,5 @@ function getChildren(item: ViperItem): ViperItem[] {
 }
 
 export function prettyPrint(viper: Viper): string {
-    return printTree<ViperItem>(viper, printNode, getChildren);
+    return printTree<ViperItem>((viper as any as { root: ViperDirectory }).root, printNode, getChildren);
 }

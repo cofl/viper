@@ -6,6 +6,7 @@ import { ViperCleanURLPlugin } from '@cofl/viper-misc';
 import { dirname, resolve } from 'path';
 import { prettyPrint } from '@cofl/viper-print-tree';
 import { ViperPugPlugin } from '@cofl/viper-pug';
+import { inspect } from 'util';
 
 void async function () {
     const base = dirname(__dirname);
