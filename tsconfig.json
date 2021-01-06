@@ -26,9 +26,6 @@
             "path": "./packages/viper-sass"
         },
         {
-            "path": "./packages/viper2"
-        },
-        {
             "path": "./test"
         }
     ],

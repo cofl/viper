@@ -41,9 +41,6 @@
             ],
             "@cofl/viper-sass": [
                 "viper-sass"
-            ],
-            "@cofl/viper2": [
-                "viper2"
             ]
         }
     }
