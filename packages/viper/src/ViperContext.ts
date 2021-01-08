@@ -2,15 +2,15 @@ import deepmerge from "deepmerge";
 import { isBufferEncoding } from "./Util";
 import { detect } from "chardet";
 import type { Viper, ViperOptions } from "./Viper";
-import type { ViperItem, ViperPage } from "./ViperItem";
+import { ViperItem, ViperItemType, ViperPage } from "./ViperItem";
 
 export interface ViperPageData {
     route: string,
     content: Buffer,
     contentType: string,
     ownMetadata: Record<string, any>,
-    filePath: string | undefined,
-    __pageObject: ViperPage
+    contentEncoding?: BufferEncoding,
+    readonly filePath?: string
 };
 
 function isViperPageData(candidate: any): candidate is ViperPageData {
@@ -66,4 +66,25 @@ export class ViperContext {
         const detected = detect(page.content);
         return isBufferEncoding(detected) ? detected : defaultEncoding;
     }
+
+    removePage({ route }: ViperPageData) {
+        const page = this.rootInstance.getPage(route);
+        if (!page)
+            throw `Cannot find page at route: ${route}`;
+        this.rootInstance.removePage(page);
+    }
+
+    addPage(pageData: AddPageType) {
+        const page: ViperPage = {
+            type: ViperItemType.Page,
+            metadata: pageData.ownMetadata || {},
+            contentType: pageData.contentType,
+            route: pageData.route,
+            content: pageData.content,
+            filePath: pageData.filePath
+        };
+        this.rootInstance.addPage(page);
+    }
 }
+
+type AddPageType = Partial<Exclude<ViperPageData, '__pageObject'>> & Pick<ViperPageData, 'content' | 'contentType' | 'route'>

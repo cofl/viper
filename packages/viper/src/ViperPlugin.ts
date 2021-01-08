@@ -1,6 +1,6 @@
 import type { Viper } from './Viper';
 import type { ViperContext, ViperPageData } from './ViperContext';
-import type { ViperNonDirectory, ViperPage, ViperVirtualItem, ViperDirectory } from "./ViperItem";
+import type { ViperNonDirectory, ViperVirtualItem, ViperDirectory } from "./ViperItem";
 import type { ViperPipeline } from './ViperPipeline';
 
 export enum ViperPluginType {
@@ -81,7 +81,7 @@ export function isViperDirectoryPlugin(candidate: any): candidate is ViperDirect
 export type ViperOutputPlugin = {
     readonly type: ViperPluginType.Output;
     readonly isPure?: boolean;
-    write(page: ViperPage): void | Promise<void>;
+    write(page: ViperPageData): void | Promise<void>;
 }
 
 export function isViperOutputPlugin(candidate: any): candidate is ViperOutputPlugin {

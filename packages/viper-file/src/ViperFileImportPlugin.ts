@@ -1,4 +1,4 @@
-import { isBufferEncoding, ViperGeneratorPlugin, ViperItemType, ViperNonDirectory, routeName, routeParent, ViperPage, ViperPluginType, ViperVirtualItem } from "@cofl/viper";
+import { isBufferEncoding, ViperGeneratorPlugin, ViperNonDirectory, routeName, routeParent, ViperPage, ViperPluginType, ViperVirtualItem } from "@cofl/viper";
 import fs, { readFileSync } from "fs";
 import { basename, extname, relative, resolve } from "path";
 import { promisify } from "util";
@@ -26,26 +26,16 @@ const MARKDOWN_FRONTMATTER_HANDLER: FileStrHandler = {
 
 const access = promisify(fs.access);
 const exists = async (path: string) => access(path).then(_ => true).catch(_ => false);
-export class ViperFile implements ViperPage {
-    readonly type = ViperItemType.Page;
-    route: string;
-    metadata: Record<string, any> = {};
-    content: Buffer;
-    encoding?: BufferEncoding
-    contentType: string;
 
-    readonly filePath: string;
-
-    constructor(path: string, route: string, content: Buffer, encoding?: BufferEncoding, contentType?: string, metadata?: Record<string, any>) {
-        this.filePath = path;
-        this.route = route;
-        this.content = content;
-        if (encoding)
-            this.encoding = encoding;
-        if (metadata)
-            this.metadata = metadata;
-        this.contentType = contentType || lookup(path) || APPLICATION_OCTET_STREAM;
-    }
+function getViperPage(path: string, route: string, content: Buffer, encoding?: BufferEncoding, contentType?: string, metadata?: Record<string, any>): ViperPage {
+    return new ViperPage(route, contentType || lookup(path) || APPLICATION_OCTET_STREAM,
+        content,
+        metadata || {},
+        {
+            filePath: path,
+            encoding
+        }
+    );
 }
 
 async function isDataFile(path: string): Promise<boolean> {
@@ -71,7 +61,7 @@ function isFileFnHandler(candidate: FileHandler): candidate is FileFnHandler {
     return typeof candidate.select === 'function';
 }
 
-function getItem(path: string, route: string, data: FileData): ViperFile | ViperVirtualItem {
+function getItem(path: string, route: string, data: FileData): ViperPage | ViperVirtualItem {
     if (!data.content)
         data.content = readFileSync(path);
     if (!data.contentType)
@@ -83,7 +73,7 @@ function getItem(path: string, route: string, data: FileData): ViperFile | Viper
             `${routeParent(data.route)}/${routeName(data.route).replace(/^_|\.json$/ig, '')}`,
             data.metadata, path);
     else
-        return new ViperFile(path, data.route, data.content, void 0, data.contentType, data.metadata);
+        return getViperPage(path, data.route, data.content, void 0, data.contentType, data.metadata);
 }
 
 type ViperFileImportPluginConstructorType =
@@ -162,7 +152,7 @@ export class ViperFileImportPlugin implements ViperGeneratorPlugin {
                     `${routeParent(route)}/${routeName(route).replace(/^_|\.json$/ig, '')}`,
                     JSON.parse(content.toString(encoding)), path);
             else
-                yield new ViperFile(path, route, content, encoding);
+                yield getViperPage(path, route, content, encoding);
         }
     }
 }

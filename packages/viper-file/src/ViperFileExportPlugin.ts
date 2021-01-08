@@ -1,7 +1,7 @@
 import { dirname, join, resolve } from "path";
 import fs from "fs";
 import { promisify } from "util";
-import { routeName, routeParent, ViperOutputPlugin, ViperPage, ViperPluginType } from "@cofl/viper";
+import { routeName, routeParent, ViperOutputPlugin, ViperPageData, ViperPluginType } from "@cofl/viper";
 import mkdirpPackage from "mkdirp";
 import { extension } from "mime-types";
 
@@ -25,7 +25,7 @@ export class ViperFileExportPlugin implements ViperOutputPlugin {
             : `${this.defaultName}.${extension(contentType) || 'file'}`;
     }
 
-    async write(page: ViperPage): Promise<void> {
+    async write(page: ViperPageData): Promise<void> {
         const name = routeName(page.route) || this.getDefaultName(page.contentType);
         const directory = routeParent(page.route);
         const outPath = join(this.path, directory, name);

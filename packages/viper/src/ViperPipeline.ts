@@ -1,7 +1,7 @@
 import { isNonEmptyArray, NonEmptyArray } from './NonEmptyArray';
 import { assertNever } from './Util';
 import { Viper } from './Viper';
-import type { ViperContext } from './ViperContext';
+import type { ViperContext, ViperPageData } from './ViperContext';
 import type { ViperPage, ViperVirtualItem, ViperDirectory } from "./ViperItem";
 import { ViperPluginType, ViperPlugin } from './ViperPlugin';
 
@@ -16,6 +16,18 @@ type Sorted = {
     virtuals?: ViperVirtualItem[],
     directories?: ViperDirectory[],
 };
+
+
+function getPageData(page: ViperPage): ViperPageData {
+    return {
+        route: page.route,
+        content: page.content,
+        contentType: page.contentType,
+        contentEncoding: page.encoding,
+        ownMetadata: page.metadata,
+        filePath: page.filePath
+    };
+}
 
 export class ViperPipeline {
     readonly type = ViperPluginType.Pipeline;
@@ -62,6 +74,15 @@ export class ViperPipeline {
         };
     }
 
+    private applyPageData(page: ViperPage, data: ViperPageData): void {
+        if (page.route !== data.route)
+            this.instance.move(page.route, data.route);
+        page.content = data.content;
+        page.contentType = data.contentType;
+        page.encoding = data.contentEncoding;
+        page.metadata = data.ownMetadata;
+    }
+
     async run(context: ViperContext, maps: Maps, preSorted?: Sorted): Promise<void> {
         if (!isNonEmptyArray(this.plugins))
             return;
@@ -77,15 +98,11 @@ export class ViperPipeline {
                         this.instance.add(item);
                     break;
                 case ViperPluginType.Page:
-                    for (const item of sorted.pages!)
-                        await plugin.process({
-                            route: item.route,
-                            content: item.content,
-                            contentType: item.contentType,
-                            ownMetadata: item.metadata,
-                            filePath: item.filePath,
-                            __pageObject: item
-                        }, context);
+                    for (const item of sorted.pages!) {
+                        const pageData = getPageData(item);
+                        await plugin.process(pageData, context);
+                        this.applyPageData(item, pageData);
+                    }
                     break;
                 case ViperPluginType.Virtual:
                     for (const item of sorted.virtuals!)
@@ -103,7 +120,7 @@ export class ViperPipeline {
                 case ViperPluginType.Output:
                     if (sorted?.pages)
                         for (let i = sorted.pages.length - 1; i >= 0; i -= 1)
-                            await plugin.write(sorted.pages[i]!);
+                            await plugin.write(getPageData(sorted.pages[i]!));
                     break;
                 default:
                     return assertNever(plugin, `Illegal State: Unreachable case.`);

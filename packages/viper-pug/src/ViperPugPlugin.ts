@@ -1,4 +1,4 @@
-import { ViperPage, ViperPagePlugin, ViperPluginType, ViperContext, isBufferEncoding } from "@cofl/viper";
+import { ViperPagePlugin, ViperPluginType, ViperContext, isBufferEncoding, ViperPageData } from "@cofl/viper";
 import { join, resolve } from "path";
 import { compileTemplate as CompileTemplate, compileFile, Options as PugOptions } from "pug";
 import { detect } from "chardet";
@@ -22,7 +22,7 @@ export class ViperPugPlugin implements ViperPagePlugin {
         return this.templates[name]!;
     }
 
-    process(page: ViperPage, context: ViperContext): void {
+    process(page: ViperPageData, context: ViperContext): void {
         const pageMetadata = context.getMetadata(page);
         if (!pageMetadata["template"]?.endsWith(".pug") ?? false)
             return;
@@ -32,12 +32,7 @@ export class ViperPugPlugin implements ViperPagePlugin {
         const data: Record<string, any> = {
             context: context,
             data: pageMetadata,
-            pageObject: page,
-            page: {
-                route: page.route,
-                contentType: page.contentType,
-                content: page.content.toString(encoding)
-            }
+            page: { ...page, content: page.content.toString(encoding) }
         };
         if (data.data["title"])
             data.page.title = data.data["title"];

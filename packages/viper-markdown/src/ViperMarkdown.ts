@@ -1,10 +1,10 @@
 import { isBufferEncoding, ViperContext, ViperPageData, ViperPagePlugin, ViperPluginType } from "@cofl/viper";
 import micromark from "micromark";
 import { lookup } from "mime-types";
-import { ViperMarkdownPage } from "./ViperMarkdownPage";
 
 const MARKDOWN_EXTENSION = /\.(md|markdown)$/i;
 const MARKDOWN_MIME = lookup(".md") || void function () { throw `Could not find MIME type from extension .md`; }() as never;
+const HTML_MIME = lookup(".html") || void function () { throw `Could not find MIME type from extension .html`; }() as never;
 
 export type MicromarkOptions = Exclude<Parameters<typeof micromark>[2], undefined>;
 type ConstructorArguments = [] | [options: MicromarkOptions] | [encoding: BufferEncoding, options: MicromarkOptions];
@@ -24,10 +24,8 @@ export class ViperMarkdown implements ViperPagePlugin {
             return;
         const encoding = context.getEncoding(page, this.encoding);
         const content = micromark(page.content, encoding ?? this.encoding, this.options);
-        const mdPage = new ViperMarkdownPage(
-            page.route.replace(MARKDOWN_EXTENSION, '.html'),
-            Buffer.from(content, encoding ?? this.encoding),
-            page.ownMetadata, page.__pageObject);
-        context.rootInstance.replacePage(page.__pageObject, mdPage);
+        page.route = page.route.replace(MARKDOWN_EXTENSION, '.html');
+        page.content = Buffer.from(content, encoding ?? this.encoding);
+        page.contentType = HTML_MIME;
     }
 }

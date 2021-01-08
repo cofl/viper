@@ -15,12 +15,33 @@ interface BaseViperItem {
     metadata?: Record<string, any>;
 }
 
-export interface ViperPage extends BaseViperItem {
-    readonly type: ViperItemType.Page;
+export class ViperPage implements BaseViperItem {
+    readonly type = ViperItemType.Page;
     readonly filePath?: string;
     metadata: Record<string, any>;
+    route: string;
     contentType: string;
     content: Buffer;
+    encoding?: BufferEncoding;
+
+    parent?: ViperDirectory | ViperVirtualItem | undefined;
+    inner?: ViperItem;
+
+    constructor(route: string, contentType: string, content: Buffer, metadata: Record<string, any> = {}, data?: {
+        filePath?: string,
+        encoding?: BufferEncoding
+    }) {
+        this.route = route;
+        this.metadata = metadata;
+        this.contentType = contentType;
+        this.content = content;
+        if (data) {
+            if (data.filePath)
+                this.filePath = data.filePath;
+            if (data.encoding)
+                this.encoding = data.encoding;
+        }
+    }
 }
 
 export class ViperVirtualItem implements BaseViperItem {

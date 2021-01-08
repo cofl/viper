@@ -9,6 +9,6 @@ export class ViperCleanURLPlugin implements ViperPagePlugin {
         if (false === metadata.viper?.['clean-url'])
             return;
         if (HTML_EXTENSION.test(page.route))
-            context.rootInstance.move(page.route, page.route.replace(HTML_EXTENSION, '/'));
+            page.route = page.route.replace(HTML_EXTENSION, '/');
     }
 }

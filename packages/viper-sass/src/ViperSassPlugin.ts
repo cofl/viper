@@ -1,19 +1,6 @@
-import { ViperPage, ViperPageData, ViperPagePlugin, ViperPluginType, ViperContext, ViperItemType, routeName } from "@cofl/viper";
+import { ViperPageData, ViperPagePlugin, ViperPluginType, ViperContext, routeName } from "@cofl/viper";
 import { dirname } from "path";
 import { renderSync, Options as SassOptions } from "sass";
-
-class ViperSassSourceMap implements ViperPage {
-    readonly type = ViperItemType.Page;
-    readonly metadata: Record<string, any> = {};
-    readonly contentType: string = 'application/octet-stream';
-    route: string;
-    content: Buffer;
-
-    constructor(route: string, content: Buffer) {
-        this.route = route;
-        this.content = content;
-    }
-}
 
 const SASS_EXTENSION = /\.scss$/i;
 const CSS_EXTENSION = '.css';
@@ -35,7 +22,7 @@ export class ViperSassPlugin implements ViperPagePlugin {
         if (!SASS_EXTENSION.test(page.route))
             return;
         if (this.removeIncludesFromOutput && routeName(page.route)[0] === '_') {
-            context.rootInstance.removePage(page.__pageObject);
+            context.removePage(page);
             return;
         }
 
@@ -51,10 +38,14 @@ export class ViperSassPlugin implements ViperPagePlugin {
                 options.includePaths.push(pageMetadata["sassIncludePath"]);
         }
         const result = renderSync(options);
+        page.route = newRoute;
         page.content = result.css;
 
-        context.rootInstance.movePage(page.__pageObject, newRoute);
         if (result.map)
-            context.rootInstance.addPage(new ViperSassSourceMap(`${newRoute}.map`, result.map))
+            context.addPage({
+                contentType: 'application/octet-stream',
+                content: result.map,
+                route: `${newRoute}.map`
+            });
     }
 }
