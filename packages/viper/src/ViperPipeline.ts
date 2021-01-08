@@ -1,4 +1,3 @@
-import { isNonEmptyArray } from './NonEmptyArray';
 import { assertNever } from './Util';
 import { Viper } from './Viper';
 import type { ViperContext, ViperPageData } from './ViperContext';
@@ -42,8 +41,6 @@ export class ViperPipeline {
     }
 
     async run(context: ViperContext): Promise<void> {
-        if (!isNonEmptyArray(this.plugins))
-            return;
         for (const plugin of this.plugins) {
             switch (plugin.type) {
                 case ViperPluginType.Provider:

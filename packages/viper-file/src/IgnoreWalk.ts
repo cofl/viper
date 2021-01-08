@@ -2,7 +2,7 @@ import fs, { Dir, Dirent } from "fs";
 import ignore, { Ignore } from "ignore";
 import { isAbsolute, join, posix, relative, resolve } from "path";
 import { promisify } from "util";
-import { isBufferEncoding, isNonEmptyArray, last } from "@cofl/viper";
+import { isBufferEncoding } from "@cofl/viper";
 import { detect } from "chardet";
 
 export interface Options {
@@ -36,8 +36,8 @@ export default async function* ignoreWalk(root: string, options: Options): Async
 
     const baseIgnore = ignore().add(opts.defaultIgnoreRules).add(opts.ignoreRules).add(opts.ignoreFiles);
     const stack: StackItem[] = [{ ignore: null, path: relative(root, root), dir: await opendir(root) }];
-    stackLoop: while (isNonEmptyArray<StackItem>(stack)) {
-        const top = last(stack);
+    stackLoop: while (stack.length > 0) {
+        const top = stack[stack.length - 1]!;
         let entry: Dirent | null = await top.dir.read();
         if (null === entry) {
             await top.dir.close();
