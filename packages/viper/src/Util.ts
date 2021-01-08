@@ -17,3 +17,5 @@ export function isBufferEncoding(candidate: any): candidate is BufferEncoding {
 export function assertNever(_: never, message: any): never {
     throw message;
 }
+
+export const APPLICATION_OCTET_STREAM = 'application/octet-stream';

@@ -1,4 +1,4 @@
-import { ViperPageData, ViperPagePlugin, ViperPluginType, ViperContext, routeName } from "@cofl/viper";
+import { ViperPageData, ViperPagePlugin, ViperPluginType, ViperContext, routeName, APPLICATION_OCTET_STREAM } from "@cofl/viper";
 import { dirname } from "path";
 import { renderSync, Options as SassOptions } from "sass";
 
@@ -43,7 +43,7 @@ export class ViperSassPlugin implements ViperPagePlugin {
 
         if (result.map)
             context.addPage({
-                contentType: 'application/octet-stream',
+                contentType: APPLICATION_OCTET_STREAM,
                 content: result.map,
                 route: `${newRoute}.map`
             });

@@ -1,4 +1,4 @@
-import { isBufferEncoding, ViperGeneratorPlugin, ViperNonDirectory, routeName, routeParent, ViperPage, ViperPluginType, ViperVirtualItem } from "@cofl/viper";
+import { isBufferEncoding, ViperGeneratorPlugin, routeName, routeParent, ViperPluginType, ViperAddItem, ViperPageData, APPLICATION_OCTET_STREAM } from "@cofl/viper";
 import fs, { readFileSync } from "fs";
 import { basename, extname, relative, resolve } from "path";
 import { promisify } from "util";
@@ -7,7 +7,6 @@ import { lookup } from "mime-types";
 import { detect } from "chardet";
 import frontMatter from "front-matter";
 
-const APPLICATION_OCTET_STREAM = 'application/octet-stream';
 const MARKDOWN_MIME = lookup('.md') || 'text/markdown';
 const MARKDOWN_FRONTMATTER_HANDLER: FileStrHandler = {
     select: MARKDOWN_MIME,
@@ -27,15 +26,18 @@ const MARKDOWN_FRONTMATTER_HANDLER: FileStrHandler = {
 const access = promisify(fs.access);
 const exists = async (path: string) => access(path).then(_ => true).catch(_ => false);
 
-function getViperPage(path: string, route: string, content: Buffer, encoding?: BufferEncoding, contentType?: string, metadata?: Record<string, any>): ViperPage {
-    return new ViperPage(route, contentType || lookup(path) || APPLICATION_OCTET_STREAM,
-        content,
-        metadata || {},
-        {
-            filePath: path,
-            encoding
-        }
-    );
+function getPageData(filePath: string, route: string, content: Buffer, encoding?: BufferEncoding, contentType?: string, metadata?: Record<string, any>): ViperPageData {
+    if (!encoding) {
+        const detected = detect(content);
+        if (isBufferEncoding(detected))
+            encoding = detected;
+    }
+    return {
+        route, content, filePath,
+        contentEncoding: encoding,
+        contentType: contentType || lookup(filePath) || APPLICATION_OCTET_STREAM,
+        ownMetadata: metadata || {}
+    };
 }
 
 async function isDataFile(path: string): Promise<boolean> {
@@ -61,19 +63,19 @@ function isFileFnHandler(candidate: FileHandler): candidate is FileFnHandler {
     return typeof candidate.select === 'function';
 }
 
-function getItem(path: string, route: string, data: FileData): ViperPage | ViperVirtualItem {
+function getItem(path: string, route: string, data: FileData): ViperAddItem {
+    if (!data.route)
+        data.route = route;
+    if (data.isVirtual)
+        return {
+            route: `${routeParent(route)}/${routeName(route).replace(/^_|\.json$/ig, '')}`,
+            data: data.metadata || {}
+        };
     if (!data.content)
         data.content = readFileSync(path);
     if (!data.contentType)
         data.contentType = lookup(path) || APPLICATION_OCTET_STREAM;
-    if (!data.route)
-        data.route = route;
-    if (data.isVirtual)
-        return new ViperVirtualItem(
-            `${routeParent(data.route)}/${routeName(data.route).replace(/^_|\.json$/ig, '')}`,
-            data.metadata, path);
-    else
-        return getViperPage(path, data.route, data.content, void 0, data.contentType, data.metadata);
+    return getPageData(path, data.route, data.content, void 0, data.contentType, data.metadata);
 }
 
 type ViperFileImportPluginConstructorType =
@@ -82,6 +84,7 @@ type ViperFileImportPluginConstructorType =
     | [path: string, options: IgnoreOptions, handlers?: FileHandler[]];
 export class ViperFileImportPlugin implements ViperGeneratorPlugin {
     readonly type = ViperPluginType.Generator;
+    readonly isPure = false;
     readonly rootPath: string;
     private readonly ignoreOptions: IgnoreOptions;
     private readonly extHandlers: Record<string, HandlerFn> = {};
@@ -120,7 +123,7 @@ export class ViperFileImportPlugin implements ViperGeneratorPlugin {
         return this.use(MARKDOWN_FRONTMATTER_HANDLER);
     }
 
-    async* items(): AsyncGenerator<ViperNonDirectory, void, undefined> {
+    async* items(): AsyncGenerator<ViperAddItem, void, undefined> {
         if (!await exists(this.rootPath))
             throw `Cannot access ${this.rootPath}`;
         fileLoop:
@@ -145,14 +148,16 @@ export class ViperFileImportPlugin implements ViperGeneratorPlugin {
 
             // fallback
             const content = readFileSync(path);
-            const detected = detect(content);
-            const encoding = isBufferEncoding(detected) ? detected : 'utf-8';
-            if (await isDataFile(path))
-                yield new ViperVirtualItem(
-                    `${routeParent(route)}/${routeName(route).replace(/^_|\.json$/ig, '')}`,
-                    JSON.parse(content.toString(encoding)), path);
-            else
-                yield getViperPage(path, route, content, encoding);
+            if (await isDataFile(path)) {
+                const detected = detect(content);
+                const encoding = isBufferEncoding(detected) ? detected : 'utf-8';
+                yield {
+                    route: `${routeParent(route)}/${routeName(route).replace(/^_|\.json$/ig, '')}`,
+                    data: JSON.parse(content.toString(encoding))
+                }
+            } else {
+                yield getPageData(path, route, content);
+            }
         }
     }
 }

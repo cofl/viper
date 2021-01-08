@@ -1,79 +1,60 @@
+import { APPLICATION_OCTET_STREAM } from "./Util";
+import type { PartialPageData } from "./Viper";
+
 export enum ViperItemType {
     Page,
-    Directory,
-    Virtual
+    Directory
 }
 
-export type ViperItem = ViperPage | ViperDirectory | ViperVirtualItem;
-export type ViperNonDirectory = Exclude<ViperItem, ViperDirectory>;
-export type ViperNonPage = Exclude<ViperItem, ViperPage>;
+export type ViperItem = ViperPage | ViperDirectory;
 
-// common properties so I don't need to retype them all.
-interface BaseViperItem {
-    route: string;
-    parent?: ViperNonPage;
-    metadata?: Record<string, any>;
-}
-
-export class ViperPage implements BaseViperItem {
+export class ViperPage {
     readonly type = ViperItemType.Page;
+    readonly id: string;
     readonly filePath?: string;
-    metadata: Record<string, any>;
     route: string;
+    parent: ViperDirectory;
+    metadata: Record<string, any>;
     contentType: string;
     content: Buffer;
     encoding?: BufferEncoding;
 
-    parent?: ViperDirectory | ViperVirtualItem | undefined;
-    inner?: ViperItem;
+    constructor(id: string, parent: ViperDirectory, data: PartialPageData) {
+        this.id = id;
+        this.route = data.route;
+        this.parent = parent;
+        this.metadata = data.ownMetadata || {};
+        this.contentType = data.contentType || APPLICATION_OCTET_STREAM;
+        this.content = data.content;
+        if (data.contentEncoding)
+            this.encoding = data.contentEncoding;
+        if (data.filePath)
+            this.filePath = data.filePath;
+    }
 
-    constructor(route: string, contentType: string, content: Buffer, metadata: Record<string, any> = {}, data?: {
-        filePath?: string,
-        encoding?: BufferEncoding
-    }) {
-        this.route = route;
-        this.metadata = metadata;
-        this.contentType = contentType;
-        this.content = content;
-        if (data) {
-            if (data.filePath)
-                this.filePath = data.filePath;
-            if (data.encoding)
-                this.encoding = data.encoding;
-        }
+    apply(data: PartialPageData) {
+        this.route = data.route;
+        this.metadata = data.ownMetadata || this.metadata;
+        this.contentType = data.contentType || this.contentType;
+        this.content = data.content;
+        if (data.contentEncoding)
+            this.encoding = data.contentEncoding;
     }
 }
 
-export class ViperVirtualItem implements BaseViperItem {
-    readonly type = ViperItemType.Virtual;
-    readonly metadata: Record<string, any>;
-    readonly filePath?: string;
-    route: string;
-    parent?: ViperDirectory | ViperVirtualItem | undefined;
-    inner?: ViperItem;
-
-    constructor(route: string, metadata: Record<string, any> = {}, path?: string) {
-        this.route = route;
-        this.metadata = metadata;
-        if (typeof path === 'string')
-            this.filePath = path;
-    }
-}
-
-export class ViperDirectory implements BaseViperItem {
+export class ViperDirectory {
     readonly type = ViperItemType.Directory;
+    readonly id: string;
     readonly children: Record<string, ViperItem> = {};
     route: string;
-    parent?: ViperDirectory | ViperVirtualItem | undefined;
-    metadata?: Record<string, any> | undefined;
+    parent: ViperDirectory | null;
 
-    constructor(route: string) {
+    constructor(id: string, parent: ViperDirectory | null, route: string) {
+        this.id = id;
+        this.parent = parent;
         this.route = route;
     }
 }
 
 export const isViperPage = (candidate: any): candidate is ViperPage => candidate?.type === ViperItemType.Page;
 export const isViperDirectory = (candidate: any): candidate is ViperDirectory => candidate?.type === ViperItemType.Directory;
-export const isViperVirtualItem = (candidate: any): candidate is ViperVirtualItem => candidate?.type === ViperItemType.Virtual;
-export const hasViperVirtualInnerItem = (candidate: any): candidate is ViperVirtualItem & { inner: ViperVirtualItem } =>
-    isViperVirtualItem(candidate) && isViperVirtualItem(candidate.inner) && candidate.inner !== candidate;

@@ -1,6 +1,6 @@
-import type { Viper } from './Viper';
+import type { Viper, ViperAddItem } from './Viper';
 import type { ViperContext, ViperPageData } from './ViperContext';
-import type { ViperNonDirectory, ViperVirtualItem, ViperDirectory } from "./ViperItem";
+import type { ViperDirectory } from "./ViperItem";
 import type { ViperPipeline } from './ViperPipeline';
 
 export enum ViperPluginType {
@@ -8,19 +8,17 @@ export enum ViperPluginType {
     Input,
     Generator,
     Page,
-    Virtual,
     Directory,
     Output,
     Pipeline
 }
 
 export type ViperContentPlugin = ViperProviderPlugin | ViperInputPlugin | ViperGeneratorPlugin;
-export type ViperTransformPlugin = ViperPagePlugin | ViperVirtualPlugin | ViperDirectoryPlugin;
+export type ViperTransformPlugin = ViperPagePlugin | ViperDirectoryPlugin;
 export type ViperPlugin = ViperContentPlugin | ViperTransformPlugin | ViperOutputPlugin | ViperPipeline;
 
 export type ViperProviderPlugin = {
     readonly type: ViperPluginType.Provider;
-    readonly isPure?: boolean;
     load(instance: Viper): void | Promise<void>;
 }
 
@@ -30,8 +28,7 @@ export function isViperProviderPlugin(candidate: any): candidate is ViperProvide
 
 export type ViperInputPlugin = {
     readonly type: ViperPluginType.Input;
-    readonly isPure?: boolean;
-    items(): Iterable<ViperNonDirectory> | Promise<Iterable<ViperNonDirectory>>;
+    items(): Iterable<ViperAddItem> | Promise<Iterable<ViperAddItem>>;
 }
 
 export function isViperInputPlugin(candidate: any): candidate is ViperInputPlugin {
@@ -40,8 +37,7 @@ export function isViperInputPlugin(candidate: any): candidate is ViperInputPlugi
 
 export type ViperGeneratorPlugin = {
     readonly type: ViperPluginType.Generator;
-    readonly isPure?: boolean;
-    items(): Generator<ViperNonDirectory, void, undefined> | AsyncGenerator<ViperNonDirectory, void, undefined>;
+    items(): Generator<ViperAddItem, void, undefined> | AsyncGenerator<ViperAddItem, void, undefined>;
 }
 
 export function isViperGeneratorPlugin(candidate: any): candidate is ViperGeneratorPlugin {
@@ -50,7 +46,6 @@ export function isViperGeneratorPlugin(candidate: any): candidate is ViperGenera
 
 export type ViperPagePlugin = {
     readonly type: ViperPluginType.Page;
-    readonly isPure?: boolean;
     process(page: ViperPageData, context?: ViperContext): void | Promise<void>;
 }
 
@@ -58,19 +53,8 @@ export function isViperPagePlugin(candidate: any): candidate is ViperPagePlugin 
     return candidate && candidate.type === ViperPluginType.Page && typeof candidate.process === 'function';
 }
 
-export type ViperVirtualPlugin = {
-    readonly type: ViperPluginType.Virtual;
-    readonly isPure?: boolean;
-    process(page: ViperVirtualItem, context?: ViperContext): void | Promise<void>;
-}
-
-export function isViperVirtualPlugin(candidate: any): candidate is ViperVirtualPlugin {
-    return candidate && candidate.type === ViperPluginType.Virtual && typeof candidate.process === 'function';
-}
-
 export type ViperDirectoryPlugin = {
     readonly type: ViperPluginType.Directory;
-    readonly isPure?: boolean;
     process(page: ViperDirectory, context?: ViperContext): void | Promise<void>;
 }
 
@@ -80,7 +64,6 @@ export function isViperDirectoryPlugin(candidate: any): candidate is ViperDirect
 
 export type ViperOutputPlugin = {
     readonly type: ViperPluginType.Output;
-    readonly isPure?: boolean;
     write(page: ViperPageData): void | Promise<void>;
 }
 
