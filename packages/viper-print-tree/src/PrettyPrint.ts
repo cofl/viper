@@ -1,15 +1,19 @@
-import { isViperPage, routeName, Viper, ViperItem, ViperItemType } from "@cofl/viper";
+import { routeName, Viper, ViperItem, ViperItemType } from "@cofl/viper";
 import { inspect } from "util";
 import printTree from "print-tree";
 
-function printNode(item: ViperItem): string {
-    const segment = routeName(item.route);
-    const name = `${segment}${segment ? ' ' : ''}(${item.route})`;
-    const type = inspect(item, false, -1, true);
-    const metadata = isViperPage(item) ? inspect(item.metadata, false, 2, true) : '';
-    if (/\[\S+\]/.test(type))
-        return `${type} ${name} ${metadata}`;
-    return `${name} ${metadata}`;
+function nodePrinter(instance: Viper): (item: ViperItem) => string {
+    const context = instance.getContext();
+    return (item: ViperItem): string => {
+        const segment = routeName(item.route);
+        const name = `${segment}${segment ? ' ' : ''}(${item.route})`;
+        const type = inspect(item, false, -1, true);
+        const data = context.getItemMetadata(item);
+        const metadata = data ? inspect(data, false, 2, true) : '';
+        if (/\[\S+\]/.test(type))
+            return `${type} ${name} ${metadata}`;
+        return `${name} ${metadata}`;
+    };
 }
 
 function getChildren(item: ViperItem): ViperItem[] {
@@ -20,5 +24,5 @@ function getChildren(item: ViperItem): ViperItem[] {
 
 export function prettyPrint(viper: Viper): string {
     const root = viper.getDirectoryByRoute(viper.route)!;
-    return printTree<ViperItem>(root, printNode, getChildren);
+    return printTree<ViperItem>(root, nodePrinter(viper), getChildren);
 }

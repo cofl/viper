@@ -77,6 +77,7 @@ export class Viper {
     private getOrCreateDirectory(route: string): ViperDirectory {
         if (routeName(route)) // if we're not at a zero-name page.
             route = routeParent(route);
+        route = route.replace(/(?<=.)\/$/, '');
         let directory = this.getDirectoryByRoute(route);
         if (directory)
             return directory;
@@ -124,6 +125,10 @@ export class Viper {
         this.#sortedPagesCache = void 0;
         this.#sortedDirectoriesCache = void 0;
         return this;
+    }
+
+    getContext(): ViperContext {
+        return new ViperContext(this, this.options);
     }
 
     add(...items: ViperAddItem[]): Viper {

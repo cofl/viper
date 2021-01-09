@@ -30,6 +30,9 @@
             "@cofl/viper-markdown": [
                 "viper-markdown"
             ],
+            "@cofl/viper-markdown-it": [
+                "viper-markdown-it"
+            ],
             "@cofl/viper-misc": [
                 "viper-misc"
             ],

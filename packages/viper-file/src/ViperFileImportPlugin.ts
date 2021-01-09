@@ -66,10 +66,12 @@ function isFileFnHandler(candidate: FileHandler): candidate is FileFnHandler {
 function getItem(path: string, route: string, data: FileData): ViperAddItem {
     if (!data.route)
         data.route = route;
+    const name = routeName(data.route);
     if (data.isVirtual)
         return {
-            route: `${routeParent(route)}/${routeName(route).replace(/^_|\.json$/ig, '')}`,
-            data: data.metadata || {}
+            route: `${routeParent(route)}/${name.replace(/^_|\.json$/ig, '')}`,
+            data: data.metadata || {},
+            isDirectoryData: name === '_.json'
         };
     if (!data.content)
         data.content = readFileSync(path);
@@ -151,9 +153,11 @@ export class ViperFileImportPlugin implements ViperGeneratorPlugin {
             if (await isDataFile(path)) {
                 const detected = detect(content);
                 const encoding = isBufferEncoding(detected) ? detected : 'utf-8';
+                const name = routeName(route);
                 yield {
-                    route: `${routeParent(route)}/${routeName(route).replace(/^_|\.json$/ig, '')}`,
-                    data: JSON.parse(content.toString(encoding))
+                    route: `${routeParent(route)}/${name.replace(/^_|\.json$/ig, '')}`,
+                    data: JSON.parse(content.toString(encoding)),
+                    isDirectoryData: name === '_.json'
                 }
             } else {
                 yield getPageData(path, route, content);

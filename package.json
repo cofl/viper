@@ -4,6 +4,7 @@
         "@cofl/viper": "file:packages/viper",
         "@cofl/viper-file": "file:packages/viper-file",
         "@cofl/viper-markdown": "file:packages/viper-markdown",
+        "@cofl/viper-markdown-it": "file:packages/viper-markdown-it",
         "@cofl/viper-misc": "file:packages/viper-misc",
         "@cofl/viper-print-tree": "file:packages/viper-print-tree",
         "@cofl/viper-pug": "file:packages/viper-pug",

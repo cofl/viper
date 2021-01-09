@@ -1,0 +1,10 @@
+{
+    "private": true,
+    "main": "dist/index.js",
+    "dependencies": {
+        "@cofl/viper": "file:../viper",
+        "mime-types": "^2.1.27",
+        "markdown-it": "^12.0.4",
+        "@types/markdown-it": "^12.0.1"
+    }
+}
