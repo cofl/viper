@@ -1,20 +1,7 @@
 import { assertNever } from './Util';
 import { Viper } from './Viper';
-import type { ViperContext, ViperPageData } from './ViperContext';
-import type { ViperPage } from "./ViperItem";
+import { getPageData, ViperContext } from './ViperContext';
 import { ViperPluginType, ViperPlugin } from './ViperPlugin';
-
-function getPageData(page: ViperPage): ViperPageData {
-    return {
-        id: page.id,
-        route: page.route,
-        content: page.content,
-        contentType: page.contentType,
-        contentEncoding: page.encoding,
-        ownMetadata: page.metadata,
-        filePath: page.filePath
-    };
-}
 
 export class ViperPipeline {
     readonly type = ViperPluginType.Pipeline;

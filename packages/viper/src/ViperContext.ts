@@ -1,11 +1,12 @@
 import deepmerge from "deepmerge";
-import { isBufferEncoding } from "./Util";
-import { detect } from "chardet";
+import { assertNever, getEncoding } from "./Util";
 import type { PartialPageData, Viper, ViperOptions } from "./Viper";
-import { isViperPage, ViperItem } from "./ViperItem";
+import { isViperDirectory, isViperPage, ViperDirectory, ViperItem, ViperItemType, ViperPage } from "./ViperItem";
 
+export type ViperItemData = ViperPageData | ViperDirectoryData;
 export interface ViperPageData {
-    id?: string,
+    id: string,
+    itemType: ViperItemType,
     route: string,
     content: Buffer,
     contentType: string,
@@ -13,6 +14,61 @@ export interface ViperPageData {
     contentEncoding?: BufferEncoding,
     readonly filePath?: string
 };
+
+export class ViperDirectoryData {
+    readonly #object: ViperDirectory;
+    readonly #context: ViperContext;
+    readonly itemType = ViperItemType.Directory;
+    readonly id: string;
+    readonly route: string;
+    readonly ownMetadata: Record<string, any>;
+
+    get children(): ViperItemData[] {
+        return Object.values(this.#object.children).map(a => isViperPage(a) ? getPageData(a) : new ViperDirectoryData(a, this.#context));
+    }
+
+    get parent(): ViperDirectoryData | null {
+        return this.#object.parent ? new ViperDirectoryData(this.#object.parent, this.#context) : null;
+    }
+
+    constructor(directory: ViperDirectory, context: ViperContext) {
+        this.#object = directory;
+        this.#context = context;
+        this.id = directory.id;
+        this.route = directory.route;
+        this.ownMetadata = context.getItemMetadata(directory) || {};
+    }
+}
+
+export function getPageData(page: ViperPage): ViperPageData {
+    return {
+        id: page.id,
+        itemType: page.type,
+        route: page.route,
+        content: page.content,
+        contentType: page.contentType,
+        contentEncoding: page.encoding,
+        ownMetadata: page.metadata,
+        filePath: page.filePath
+    };
+}
+
+function getObject(context: ViperContext, data: ViperItemData): ViperItem {
+    switch (data.itemType) {
+        case ViperItemType.Page:
+            const page = context.instance.getPageByID(data.id);
+            if (!page)
+                throw `Could not find page!`;
+            return page;
+        case ViperItemType.Directory:
+            const directory = context.instance.getDirectoryById(data.id);
+            if (!directory)
+                throw `Could not find directory!`;
+            return directory;
+        default:
+            return assertNever(data, `Illegal state`);
+    }
+}
 
 export class ViperContext {
     readonly instance: Viper;
@@ -23,19 +79,17 @@ export class ViperContext {
         this.options = options;
     }
 
-    getMetadata(item: ViperPageData): Record<string, any> {
+    getMetadata(item: ViperItemData): Record<string, any> {
         if (!item.id)
             throw `Cannot find metadata for page data with no ID.`;
 
-        const page = this.instance.getPageByID(item.id);
-        if (!page)
-            throw `Could not find page!`;
-
+        const obj = getObject(this, item);
+        const data = isViperPage(obj) ? obj.metadata : {};
         if (this.options.mergeType === 'none')
-            return page.metadata;
+            return data;
 
-        const queue = [page.metadata];
-        let current: ViperItem | null = page;
+        const queue = [data];
+        let current: ViperItem | null = obj;
         do {
             const items = this.instance.getVirtualItems(current.id);
             if (items)
@@ -63,8 +117,7 @@ export class ViperContext {
     getEncoding<T extends BufferEncoding | undefined>(page: ViperPageData, defaultEncoding: T): BufferEncoding | T {
         if (page.contentEncoding)
             return page.contentEncoding;
-        const detected = detect(page.content);
-        return isBufferEncoding(detected) ? detected : defaultEncoding;
+        return getEncoding(page.content, defaultEncoding);
     }
 
     removePage({ id }: ViperPageData) {
@@ -76,4 +129,28 @@ export class ViperContext {
     addPage(pageData: PartialPageData) {
         this.instance.add(pageData);
     }
+
+    siblings(data: { id: string }) {
+        if (!data.id)
+            throw `Cannot find a page with no ID.`;
+        const item = isViperPage(data) ? data : isViperDirectory(data) ? data : this.instance.getPageByID(data.id) || this.instance.getDirectoryById(data.id);
+        if (!item)
+            throw `Cannot find item.`;
+        if (!item.parent)
+            return [];
+        return Object.values(item.parent.children).filter(({ id }) => id !== item.id).map(a => a.type === ViperItemType.Page ? getPageData(a) : new ViperDirectoryData(a, this))
+    }
+
+    parent(data: { id: string }): ViperDirectoryData | null {
+        if (!data.id)
+            throw `Cannot find a page with no ID.`;
+        const item = isViperPage(data) ? data : isViperDirectory(data) ? data : this.instance.getPageByID(data.id) || this.instance.getDirectoryById(data.id);
+        if (!item)
+            throw `Cannot find item.`;
+        if (!item.parent)
+            return null;
+        return new ViperDirectoryData(item.parent, this);
+    }
+
+    [helperName: string]: any;
 }

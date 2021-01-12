@@ -22,8 +22,11 @@ export const routeParent = (route: string): string => route.endsWith('/')
 
 export type MergeType = 'shallow' | 'deep' | 'none';
 export type ViperOptions = {
-    mergeType: MergeType
+    mergeType?: MergeType,
+    [key: string]: any
 };
+
+export type ViperContextFn = (context: ViperContext) => ViperContext | void;
 
 type ViperConstructorType =
     | [route?: string]
@@ -47,6 +50,9 @@ export class Viper {
 
     route: string = '/'; // need something for normalRoute to use.
     pipeline?: ViperPipeline;
+    readonly contextFns: ViperContextFn[] = [
+        identity => identity // so the reduce in build has something to work with.
+    ];
     private options: ViperOptions = {
         mergeType: 'deep'
     };
@@ -258,11 +264,16 @@ export class Viper {
         return this;
     }
 
+    inject(...fns: ViperContextFn[]): this {
+        this.contextFns.push(...fns);
+        return this;
+    }
+
     async build(): Promise<Viper> {
         if (!this.pipeline)
             return this;
 
-        const context = new ViperContext(this, this.options);
+        const context = this.contextFns.reduce<ViperContext>((ctx, fn) => fn(ctx) || ctx, new ViperContext(this, this.options));
         await this.pipeline.run(context);
         return this;
     }

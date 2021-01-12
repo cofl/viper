@@ -1,3 +1,5 @@
+import { detect } from "chardet";
+
 const BUFFER_ENCODINGS = {
     "ascii": true,
     "utf8": true,
@@ -19,3 +21,8 @@ export function assertNever(_: never, message: any): never {
 }
 
 export const APPLICATION_OCTET_STREAM = 'application/octet-stream';
+
+export function getEncoding<T extends BufferEncoding | undefined>(buffer: Buffer, defaultEncoding: T): BufferEncoding | T {
+    const detected = detect(buffer);
+    return isBufferEncoding(detected) ? detected : defaultEncoding;
+}

@@ -1,4 +1,4 @@
-import { isBufferEncoding, ViperGeneratorPlugin, routeName, routeParent, ViperPluginType, ViperAddItem, ViperPageData, APPLICATION_OCTET_STREAM } from "@cofl/viper";
+import { isBufferEncoding, ViperGeneratorPlugin, routeName, routeParent, ViperPluginType, ViperAddItem, APPLICATION_OCTET_STREAM, PartialPageData } from "@cofl/viper";
 import fs, { readFileSync } from "fs";
 import { basename, extname, relative, resolve } from "path";
 import { promisify } from "util";
@@ -26,7 +26,7 @@ const MARKDOWN_FRONTMATTER_HANDLER: FileStrHandler = {
 const access = promisify(fs.access);
 const exists = async (path: string) => access(path).then(_ => true).catch(_ => false);
 
-function getPageData(filePath: string, route: string, content: Buffer, encoding?: BufferEncoding, contentType?: string, metadata?: Record<string, any>): ViperPageData {
+function getPageData(filePath: string, route: string, content: Buffer, encoding?: BufferEncoding, contentType?: string, metadata?: Record<string, any>): PartialPageData {
     if (!encoding) {
         const detected = detect(content);
         if (isBufferEncoding(detected))
