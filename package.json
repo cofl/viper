@@ -1,5 +1,5 @@
 {
-    "name": "viper",
+    "name": "@cofl/viper",
     "private": true,
     "dependencies": {
         "@cofl/viper": "file:packages/viper",
